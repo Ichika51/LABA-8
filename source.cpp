@@ -1,10 +1,11 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
 #include <fstream>
+#include <cstdio>
+
 using namespace std;
 
-bool example(const char* filename,char*vvod,int*len){
-    bool first=false;
-    bool second = false;
+bool open_fstream(const char* filename,char*vvod,int*len){
     ifstream input("c:\\file.txt");
     // если файл не открыт
     if (!input) {
@@ -32,7 +33,7 @@ bool example(const char* filename,char*vvod,int*len){
         while (vvod[j] == mass[i]) {
             k++;j++;i++;
         }
-        if (k >= *len) {          //**********************************************
+        if (k >= *len) {
             k = 0;
             l++;
         }
@@ -92,11 +93,65 @@ char* get_string(int *len) {//ввод слова, которое нужно н�
     }
 }
 
+bool open_cstdio(const char* filename, char* vvod, int* len) {
+    FILE* ptrFile = fopen("c:\\file.txt", "r");
+    // если файл не открыт
+    if (!ptrFile) {
+        cout << "Ошибка открытия файла" << endl;
+        return false;
+    }
+    char ch;
+    int Count = 0;
+
+    while ((ch = getc(ptrFile)) != EOF) {
+        Count++;
+        if (ch == EOF) {
+            break;
+        }
+    }
+    cout << "Букв в файле : " << Count << endl;
+    fclose(ptrFile);
+    char* mass = new char[Count + 1];
+    ifstream file("c:\\file.txt");
+    for (int i = 0; i < Count; i++) {
+        file >> noskipws >> mass[i];
+        mass[Count] = '\0';
+    }
+    cout << mass << endl;
+    int k = 0;
+    int l = 0;
+    for (int i = 0;i < 100;i++) {//перебор строки из файла
+        int j = 0;
+        while (vvod[j] == mass[i]) {
+            k++;j++;i++;
+        }
+        if (k >= *len) {
+            k = 0;
+            l++;
+        }
+        if (vvod[j] != mass[i]) {
+            i = i - j;
+            j = 0;k = 0;
+        }
+    }
+    cout << "Слов найдено: " << l << endl;
+    fclose(ptrFile);
+    delete[] mass;
+    return true;
+}
+
 int main(){
     setlocale(LC_ALL, "RUS");
     int len = 0;
     char* str=get_string(&len);
-    example("c:\\file.txt",str,&len);
+    int d = 0;
+    cout << "Введите 1-чтобы найти слово с помощью <fstream>; 2-чтобы найти слово с помощью <cstdio>; 3-завершить программу" << endl;
+    cin >> d;
+    switch (d) {
+    case(1):open_fstream("c:\\file.txt", str, &len);break;
+    case(2):open_cstdio("c:\\file.txt", str, &len);break;
+    case(3):break;
+    }
     free(str);
     check_memory();
     return 0;
