@@ -2,50 +2,49 @@
 #include <iostream>
 #include <fstream>
 #include <cstdio>
+#include <windows.h>
 
 using namespace std;
 
-bool open_fstream(const char* filename,char*vvod,int*len){
-    ifstream input("c:\\file.txt");
-    // если файл не открыт
-    if (!input) {
+int open_fstream(const char* filename,char*vvod,int*len){
+    ifstream input(filename);
+    if (!input) {// если файл не откроется, то ошибка
         cout << "Ошибка открытия файла" << endl;
         return false;
     }
     char ch;
     int Count = 0;
-    while (input >> ch) {
-        Count++;
+    while (input >> noskipws >> ch) {//цикл, чтобы узнать, кол-во элементов в массиве
+        Count++; 
     }
-    cout << "Букв в файле : " << Count << endl;
+    cout << "Count = " << Count << endl;
     input.close();
     char* mass = new char[Count+1];
-    ifstream file("c:\\file.txt");
+    ifstream file(filename);
     for (int i = 0; i < Count; i++) {
-        file >> noskipws >> mass[i];
+        file >> noskipws >> mass[i];         //запись строк из файла в массив
         mass[Count] = '\0';
     }
     cout << mass << endl;
     int k = 0;
     int l = 0;
-    for (int i = 0;i < 100;i++) {//перебор строки из файла
+    for (int i = 0;i < Count;i++) {//перебор строки из файла
         int j = 0;
-        while (vvod[j] == mass[i]) {
+        while (vvod[j] == mass[i]) {//сравнение элементов двух массивов
             k++;j++;i++;
         }
-        if (k >= *len) {
+        if (k >= *len) { //если счетчик набрал кол-во элементов из слова, то поиск удачный
             k = 0;
             l++;
         }
-        if (vvod[j] != mass[i]) {
+        if (vvod[j] != mass[i]) {//если элементы массивов не равны, то обнуление счетчика
             i = i - j;
             j = 0;k = 0;
         }
     }
-    cout << "Слов найдено: " << l << endl;
     input.close();
     delete[] mass;
-    return true;
+    return l;
 }
 
 void check_memory() {//проверка утечек 
@@ -78,10 +77,9 @@ char* get_string(int *len) {//ввод слова, которое нужно н�
         if (h > 4) {
             free(stroka);
             cout << "\nТы ввёл слишком длинное слово(максимум 4 символа). Попробуй ещё раз:\n";
-
         }
         *len = h;
-        if (h <= 4) {
+        if (h <= 4) {     //проверка, чтобы введенное слово было не больше 4-х символов
             char* vvod = (char*)malloc(*len*sizeof(char)+1);
             for (int i = 0;i < h;i++) {
                 vvod[i] = stroka[i];
@@ -93,66 +91,80 @@ char* get_string(int *len) {//ввод слова, которое нужно н�
     }
 }
 
-bool open_cstdio(const char* filename, char* vvod, int* len) {
-    FILE* ptrFile = fopen("c:\\file.txt", "r");
-    // если файл не открыт
-    if (!ptrFile) {
+int open_cstdio(const char* filename, char* vvod, int* len) {
+    FILE* ptrFile = fopen(filename, "r");
+    if (!ptrFile) {    // если файл не открыт, то выводит ошибку
         cout << "Ошибка открытия файла" << endl;
         return false;
     }
     char ch;
     int Count = 0;
-
-    while ((ch = getc(ptrFile)) != EOF) {
+    while ((ch = getc(ptrFile)) != EOF) { //Подсчет кол-ва элементов в файле для создания массива
         Count++;
-        if (ch == EOF) {
-            break;
-        }
     }
-    cout << "Букв в файле : " << Count << endl;
+    cout << "Count = " << Count << endl;
     fclose(ptrFile);
+    FILE* ptr = fopen(filename, "r");
     char* mass = new char[Count + 1];
-    ifstream file("c:\\file.txt");
     for (int i = 0; i < Count; i++) {
-        file >> noskipws >> mass[i];
+        char c = fgetc(ptrFile);
+        mass[i]=c;//Запись в массив файла
         mass[Count] = '\0';
     }
     cout << mass << endl;
     int k = 0;
     int l = 0;
-    for (int i = 0;i < 100;i++) {//перебор строки из файла
+    for (int i = 0;i < Count;i++) {//перебор массива
         int j = 0;
-        while (vvod[j] == mass[i]) {
-            k++;j++;i++;
+        while (vvod[j] == mass[i]) {//если символы из текста равны символам из слова, то k++
+            k++;j++;i++;            
         }
-        if (k >= *len) {
+        if (k >= *len) {//если k больше или равен кол-ву символов в слове, то l++
             k = 0;
             l++;
         }
-        if (vvod[j] != mass[i]) {
+        if (vvod[j] != mass[i]) {//если символ из текста не равен символу из слова, то k=0
             i = i - j;
             j = 0;k = 0;
         }
     }
-    cout << "Слов найдено: " << l << endl;
-    fclose(ptrFile);
+    fclose(ptr);
     delete[] mass;
-    return true;
+    return l;
+}
+
+int checkNumber() {//проверка корректности целого числа
+    int k;
+    cin >> k;
+    while (cin.fail() || k > 3 || 1 > k) {//Если число не от 1 до 3 и символьное, то...
+        cin.clear();
+        cin.ignore(32767, '\n');
+        cout << "\nНеккоректное число, повторите ввод(Ввести нужно число от 1 до 3): ";
+        cin >> k;  //ввод нового числа
+    }
+    return k;
 }
 
 int main(){
     setlocale(LC_ALL, "RUS");
+    SetConsoleCP(1251);
+    SetConsoleOutputCP(1251);
     int len = 0;
-    char* str=get_string(&len);
-    int d = 0;
+    char* str=get_string(&len);//получение слова, которое нужно найти в тексте, масимум 4 символа
     cout << "Введите 1-чтобы найти слово с помощью <fstream>; 2-чтобы найти слово с помощью <cstdio>; 3-завершить программу" << endl;
-    cin >> d;
+    int d = checkNumber();//проверка ввода числа, для выбора варианта(от 1 до 3)
+    int l;
     switch (d) {
-    case(1):open_fstream("c:\\file.txt", str, &len);break;
-    case(2):open_cstdio("c:\\file.txt", str, &len);break;
-    case(3):break;
+    case(1):l = open_fstream("c:\\file.txt", str, &len);//открытие file.txt и запись в поток с помощью библиотеки <fstream> и поиск слова в тексте, возврат кол-ва найденных слов
+        cout << "Количество слов '" << str << "' в тексте = " << l << endl;
+        break;
+    case(2):l = open_cstdio("c:\\file.txt", str, &len);//открытие file.txt и запись в поток с помощью библиотеки <cstdio> и поиск слова в тексте, возврат кол-ва найденных слов
+        cout << "Количество слов '" << str << "' в тексте = " << l << endl;
+        break;
+    case(3):
+        break;
     }
-    free(str);
-    check_memory();
+    free(str);//очистка массива
+    check_memory();//проверка утечек памяти
     return 0;
 }
